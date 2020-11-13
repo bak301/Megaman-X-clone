@@ -1,6 +1,21 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
+public enum PlayerState
+{
+    Idle = 0,
+    Run = 1,
+    Jump = 2,
+    Dash = 3,
+    AirDash = 4,
+    IdleShoot = 10,
+    RunShoot = 11,
+    JumpShoot = 12,
+    DashShoot = 13,
+    Damaged = 20
+}
 
 public class Player : MonoBehaviour
 {
@@ -10,64 +25,64 @@ public class Player : MonoBehaviour
     [SerializeField] private float dashCooldownOrigin;
     [SerializeField] private float dashMultiplier;
     [SerializeField] private float baseSpeed;
-    private float dashCooldown;
+    [SerializeField] private GroundCheck groundCheck;
     private Rigidbody2D player;
-    private bool leftCollide = false;
-    private bool rightCollide = false;
-    private string[] keyNames;
-    private bool jumpable = true;
-
+    private bool isGrounded;
 
     // Start is called before the first frame update
     void Start()
     {
         player = GetComponent<Rigidbody2D>();
-        keyNames = new string[]{ "x", "left", "right", "c"};
     }
 
 
     private void Update()
-    {
-
+    {        
+        
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        SetAnimation();
-        dashCooldown -= Time.fixedDeltaTime;
-        float horizontalSpeed = Mathf.Abs(player.velocity.x) < baseSpeed + 1 ? baseSpeed : Mathf.Abs(player.velocity.x);
-
-        if (Input.GetKey(keyNames[1]))
+        if (Input.GetAxis("Jump") > 0 && isGrounded == true)
         {
-            player.velocity = new Vector2(-1 * horizontalSpeed, player.velocity.y);
-            animator.transform.eulerAngles = new Vector3(0, 180, 0);
-
-        }
-        else if (Input.GetKey(keyNames[2]))
-        {
-            player.velocity = new Vector2(1 * horizontalSpeed, player.velocity.y);
-            animator.transform.eulerAngles = new Vector3(0, 0, 0);
+            player.velocity = Vector2.up * jumpSpeed;
+            animator.Play("jump");
+            isGrounded = false;
         }
 
-        if (Input.GetKey(keyNames[0]) && jumpable == true)
+        if (Input.GetAxis("Horizontal") != 0)
         {
-            player.velocity = new Vector2(player.velocity.x, jumpSpeed);
-        }
-
-        if (Input.GetKey(keyNames[3]) && dashCooldown <= 0)
-        {
-            var rotation = player.gameObject.transform.eulerAngles;
-            player.velocity = new Vector2(Mathf.Sign(90 - rotation.y) * baseSpeed * dashMultiplier, player.velocity.y);
-            dashCooldown = dashCooldownOrigin;
+            float side = Mathf.Sign(Input.GetAxis("Horizontal"));
+            Debug.Log($"Input horizontal {side}");
+            this.transform.eulerAngles = new Vector3(0, 90 - 90 * side, 0);
+            this.transform.Translate(Time.deltaTime * side * baseSpeed, 0, 0, Space.World);
+            animator.Play("run");
         }
     }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        isGrounded = UpdateGroundedStatus();
+    }
+
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        isGrounded = UpdateGroundedStatus();
+    }
+
+    // Custom functions
+
+    private bool UpdateGroundedStatus()
+    {
+        return groundCheck.isGrounded;
+    }
     private void SetAnimation()
     {
-        if (jumpable == false && Mathf.Abs(player.velocity.x) <= baseSpeed)
+        if (isGrounded == false)
         {
-            animator.Play("jump");
+            animator.Play("jumping");
         }
         else if (Mathf.Abs(player.velocity.x) > 0)
         {
@@ -77,29 +92,12 @@ public class Player : MonoBehaviour
             }
             else if (Mathf.Abs(player.velocity.x) > 0)
             {
-                animator.Play("run");
+                animator.Play("running");
             }
         }
         else
         {
-            animator.Play("idle");
+            animator.Play("Idle");
         }
     }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.name == "map")
-        {
-            jumpable = true;
-        }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.name == "map")
-        {
-            jumpable = false;
-        }
-    }
-
 }

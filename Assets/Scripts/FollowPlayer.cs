@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FollowPlayer : MonoBehaviour
 {
-    [SerializeField] private Rigidbody2D player;
+    [SerializeField] private Transform player;
     // Start is called before the first frame update
     void Start()
     {
@@ -14,6 +14,6 @@ public class FollowPlayer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        this.transform.position = new Vector3(player.transform.position.x, this.transform.position.y, this.transform.position.z);
+        this.transform.position = new Vector3(player.position.x, this.transform.position.y, this.transform.position.z);
     }
 }
